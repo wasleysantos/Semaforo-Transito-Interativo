@@ -3,12 +3,12 @@
 #include "hardware/gpio.h"
 #include "hardware/timer.h"
 
-// Pinos LED RGB (BitDogLab)
 #define LED_VERMELHO 13
 #define LED_VERDE 11
 
 // Botão e Buzzer
-#define BOTAO_PEDESTRE 5
+#define BOTAO_PEDESTRE_A 5
+#define BOTAO_PEDESTRE_B 6
 #define BUZZER 21
 
 // Estado do sistema
@@ -48,7 +48,7 @@ bool callback_timer(struct repeating_timer *t) {
     static absolute_time_t ultimo_acionamento = {0};
     const int DEBOUNCE_MS = 150; // 150 milissegundos
 
-    if (!gpio_get(BOTAO_PEDESTRE)) {  // Botão pressionado
+    if (!gpio_get(BOTAO_PEDESTRE_A || BOTAO_PEDESTRE_B)) {  // Botão pressionado
         if (!aguardando_soltar) {
             if (absolute_time_diff_us(ultimo_acionamento, get_absolute_time()) / 1000 > DEBOUNCE_MS) {
                 pedestre_acionou = true;
@@ -68,8 +68,10 @@ void inicializar_hardware() {
     gpio_init(LED_VERMELHO); gpio_set_dir(LED_VERMELHO, GPIO_OUT);
     gpio_init(LED_VERDE); gpio_set_dir(LED_VERDE, GPIO_OUT);
 
-    gpio_init(BOTAO_PEDESTRE); gpio_set_dir(BOTAO_PEDESTRE, GPIO_IN);
-    gpio_pull_up(BOTAO_PEDESTRE); // botão com pull-up interno
+    gpio_init(BOTAO_PEDESTRE_A); gpio_set_dir(BOTAO_PEDESTRE_A, GPIO_IN);
+    gpio_pull_up(BOTAO_PEDESTRE_A); // botão com pull-up interno
+    gpio_init(BOTAO_PEDESTRE_B); gpio_set_dir(BOTAO_PEDESTRE_B, GPIO_IN);
+    gpio_pull_up(BOTAO_PEDESTRE_B); // botão com pull-up interno
 
     gpio_init(BUZZER); gpio_set_dir(BUZZER, GPIO_OUT);
 
