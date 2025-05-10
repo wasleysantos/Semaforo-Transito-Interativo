@@ -33,8 +33,9 @@ int main() {
 
     while (true) {
         if (pedestre_acionou) {
+            printf("-----------------------------\n");
             printf("Botão de Pedestres acionado\n");
-            printf("Aguarde o sinal ficar vermelho e faça a travessia\n");
+            printf("-----------------------------\n");
             modo_travessia();
             pedestre_acionou = false;
         } else {
@@ -89,7 +90,7 @@ void semaforo_padrao() {
     gpio_put(LED_VERMELHO, 1);
     gpio_put(LED_VERDE, 0);
     for (int i = 0; i < 10; i++) {
-        printf("Sinal vermelho\n");
+        printf("Sinal vermelho(%d)\n", 10 - i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
@@ -98,7 +99,7 @@ void semaforo_padrao() {
     gpio_put(LED_VERMELHO, 0);
     gpio_put(LED_VERDE, 1);
     for (int i = 0; i < 10; i++) {
-        printf("Sinal verde\n");
+        printf("Sinal verde(%d)\n", 10 - i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
@@ -107,7 +108,7 @@ void semaforo_padrao() {
     gpio_put(LED_VERMELHO, 1);
     gpio_put(LED_VERDE, 1);
     for (int i = 0; i < 3; i++) {
-        printf("Sinal amarelo\n");
+        printf("Sinal amarelo(%d)\n", 3 - i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
@@ -128,27 +129,25 @@ void modo_travessia() {
 
     // Contagem regressiva com som no buzzer
     for (int i = 5; i > 0; i--) {
-        printf("Atenção!! Travessia termina em %d...\n", i);
+        printf("Travessia termina em %d...\n", i);
         gpio_put(BUZZER, 1);
         sleep_ms(300);
         gpio_put(BUZZER, 0);
         sleep_ms(800);
     }
-
+    printf("Travessia encerrada\n");
     // Volta ao verde e amarelo
     gpio_put(LED_VERDE, 1);
     gpio_put(LED_VERMELHO, 0);
     for (int i = 0; i < 10; i++) {
-        printf("Sinal verde\n");
+        printf("Sinal verde(%d)\n", 10 - i);
         sleep_ms(1000);
-        if (pedestre_acionou) return;
     }
 
     gpio_put(LED_VERDE, 1);
     gpio_put(LED_VERMELHO, 1);
-    for (int i = 0; i < 3; i++) {
-        printf("Sinal amarelo\n");
+   for (int i = 0; i < 3; i++) {
+        printf("Sinal amarelo(%d)\n", 3 - i);
         sleep_ms(1000);
-        if (pedestre_acionou) return;
     }
 }
