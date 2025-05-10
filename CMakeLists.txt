@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(SemaforoTransitoInterativo SemaforoTransitoInterativo.c )
+add_executable(SemaforoTransitoInterativo SemaforoTransitoInterativo.c ssd1306_i2c.c)
 
 pico_set_program_name(SemaforoTransitoInterativo "SemaforoTransitoInterativo")
 pico_set_program_version(SemaforoTransitoInterativo "0.1")
@@ -57,6 +57,9 @@ target_include_directories(SemaforoTransitoInterativo PRIVATE
 target_link_libraries(SemaforoTransitoInterativo 
         hardware_timer
         hardware_gpio
+        hardware_adc  
+        hardware_dma
+        hardware_i2c
         )
 
 pico_add_extra_outputs(SemaforoTransitoInterativo)
