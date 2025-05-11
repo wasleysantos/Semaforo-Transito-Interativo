@@ -1,28 +1,53 @@
-<h1>Semáforo Interativo</h1>
+# 🚦 Semáforo Interativo
 
-<h2>Funcionamento</h2>
+## 🧠 Funcionamento
 
-🔴 Vermelho: 10 segundos
+O projeto simula um **semáforo inteligente com acionamento por pedestre**, utilizando lógica embarcada, botões físicos, sinais visuais e sonoros:
 
-🟢Verde: 10 segundos
+- 🔴 **Vermelho:** 10 segundos
+- 🟢 **Verde:** 10 segundos
+- 🟡 **Amarelo:** 3 segundos
+- 🚫 **Travessia de pedestre:** 10 segundos com contagem regressiva e buzzer
 
-🟡Amarelo: 3 segundos
+## 🙋 Interatividade
 
-🚫Acionamento de travessia pedestre: 10 segundos
+Pedestres podem solicitar a travessia pressionando os **botões A ou B**. O sistema responde com:
 
-<h2>Interatividade</h2>
+- 🔴 O semáforo muda para **vermelho** por 10 segundos
+- ⏱️ Inicia uma **contagem regressiva** visível
+- 🔊 Emite sinal sonoro com buzzer para auxiliar **pessoas com deficiência visual**
+- 🖥️ Mostra informações no **display OLED**:
+  - Cor atual do sinal
+  - Tempo restante
+  - Status do botão de pedestre
 
-Botões A e B estão disponíveis para acionamento por pedestres que desejam atravessar. Ao pressionar um desses botões:
+## 📺 Sinalização Sonora e Visual
 
-O semáforo ficará vermelho por 10 segundos
-Durante esse período, haverá uma contagem regressiva
-Também será emitido um sinal sonoro para auxiliar pessoas com deficiência visual
-Tudo é sinalizado no OLED LCD: Cor do sinal, Segundos, Acionamento pedestre.
-Uso de Buzzer para sinalização de contagem regressiva da travessia do pedestre. 
+- **Buzzer**: emite bipes durante a contagem para indicar o tempo de travessia
+- **OLED LCD**: exibe o estado do semáforo em tempo real
 
+## 🧪 Simulador
 
-Simulador Wokwi: https://wokwi.com/projects/430490801003324417
+Você pode testar o projeto diretamente no [Wokwi](https://wokwi.com/projects/430490801003324417):
 
-![image](https://github.com/user-attachments/assets/a9cc81d5-37bb-486f-b249-1e3c7123b1af)
+[![Simulador Wokwi](https://github.com/user-attachments/assets/a9cc81d5-37bb-486f-b249-1e3c7123b1af)](https://wokwi.com/projects/430490801003324417)
 
+---
+
+## 📦 Recursos Utilizados
+
+- BitDogLab / Raspberry pi / Simulação no Wokwi
+- Display OLED com driver SSD1306
+- Buzzer para sinalização sonora
+- Botões físicos
+- Temporizadores com `sleep_ms` ou `timers`
+- Linguagem C com SDK do Pico
+
+---
+
+📌 Ideal para projetos de acessibilidade, sistemas embarcados e automação de tráfego urbano.
+
+---
+
+🛠️ Fique a vontade para clonar, testar, contribuir ou adaptar!
 
