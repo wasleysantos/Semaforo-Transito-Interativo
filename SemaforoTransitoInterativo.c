@@ -44,12 +44,6 @@ void ssd1306_draw_string_scaled(uint8_t *buffer, int x, int y, const char *text,
     }
 }
 
-// Limpa a tela do display OLED
-void limpar_tela() {
-    uint8_t ssd[ssd1306_buffer_length];
-    memset(ssd, 0, ssd1306_buffer_length);
-    render_on_display(ssd, &frame_area);
-}
 
 int main() {
     stdio_init_all();
@@ -76,24 +70,11 @@ int main() {
     printf("Semaforo iniciado...\n");
 
     while (true) {
-        uint8_t ssd[ssd1306_buffer_length];
-        memset(ssd, 0, ssd1306_buffer_length);
-        ssd1306_draw_string_scaled(ssd, 20, 20, "SEMAFORO", 2);
-        ssd1306_draw_string_scaled(ssd, 10, 40, "INTERATIVO", 2);
-        render_on_display(ssd, &frame_area);
 
         if (pedestre_acionou) {
             printf("-----------------------------\n");
             printf("Botão de Pedestres acionado\n");
             printf("-----------------------------\n");
-
-            uint8_t ssd[ssd1306_buffer_length];
-            memset(ssd, 0, ssd1306_buffer_length);
-            ssd1306_draw_string_scaled(ssd, 40, 10, "BOTAO", 2);
-            ssd1306_draw_string_scaled(ssd, 20, 25, "PEDESTRE", 2);
-            ssd1306_draw_string_scaled(ssd, 20, 45, "ACIONADO", 2);
-            render_on_display(ssd, &frame_area);
-
             modo_travessia();
             pedestre_acionou = false;
         } else {
@@ -141,30 +122,61 @@ void inicializar_hardware() {
 void semaforo_padrao() {
     gpio_put(LED_VERMELHO, 1);
     gpio_put(LED_VERDE, 0);
-    for (int i = 0; i < 10; i++) {
-        printf("Sinal vermelho(%d)\n", 10 - i);
+    for (int i = 10; i > 0; i--) {
+        char texto[20];
+        snprintf(texto, sizeof(texto), "%d", i);
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 20, 20, "VERMELHO", 2);
+        ssd1306_draw_string_scaled(ssd, 50, 40, texto, 2);
+        render_on_display(ssd, &frame_area);
+        printf("Sinal vermelho(%d)\n", i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
 
     gpio_put(LED_VERMELHO, 0);
     gpio_put(LED_VERDE, 1);
-    for (int i = 0; i < 10; i++) {
-        printf("Sinal verde(%d)\n", 10 - i);
+    for (int i = 10; i > 0; i--) {
+        char texto[20];
+        snprintf(texto, sizeof(texto), "%d", i);
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 40, 20, "VERDE", 2);
+        ssd1306_draw_string_scaled(ssd, 50, 40, texto, 2);
+        render_on_display(ssd, &frame_area);
+        printf("Sinal verde(%d)\n", i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
 
     gpio_put(LED_VERMELHO, 1);
     gpio_put(LED_VERDE, 1);
-    for (int i = 0; i < 3; i++) {
-        printf("Sinal amarelo(%d)\n", 3 - i);
+    for (int i = 3; i > 0; i--) {
+        char texto[20];
+        snprintf(texto, sizeof(texto), "%d", i);
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 20, 20, "AMARELO", 2);
+        ssd1306_draw_string_scaled(ssd, 50, 40, texto, 2);
+        render_on_display(ssd, &frame_area);
+        printf("Sinal amarelo(%d)\n", i);
         sleep_ms(1000);
         if (pedestre_acionou) return;
     }
 }
 
-void modo_travessia() {
+void mensagem_botao(){
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 40, 10, "BOTAO", 2);
+        ssd1306_draw_string_scaled(ssd, 20, 25, "PEDESTRE", 2);
+        ssd1306_draw_string_scaled(ssd, 20, 45, "ACIONADO", 2);
+        render_on_display(ssd, &frame_area);
+}
+
+void modo_travessia() {     
+    mensagem_botao();
     gpio_put(LED_VERDE, 1);
     gpio_put(LED_VERMELHO, 1);
     printf("Sinal amarelo\n");
@@ -194,17 +206,32 @@ void modo_travessia() {
     ssd1306_draw_string_scaled(ssd, 15, 40, "ENCERRADA", 2);
     render_on_display(ssd, &frame_area);
     printf("Travessia encerrada\n");
+    sleep_ms(2000); //pausa de 2 segundos para encerrar travessia
 
     gpio_put(LED_VERDE, 1);
     gpio_put(LED_VERMELHO, 0);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 10; i > 0; i--) {
+        char texto[20];
+        snprintf(texto, sizeof(texto), "%d", i);
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 40, 20, "VERDE", 2);
+        ssd1306_draw_string_scaled(ssd, 50, 40, texto, 2);
+        render_on_display(ssd, &frame_area);
         printf("Sinal verde(%d)\n", 10 - i);
         sleep_ms(1000);
     }
 
     gpio_put(LED_VERDE, 1);
     gpio_put(LED_VERMELHO, 1);
-    for (int i = 0; i < 3; i++) {
+    for (int i = 3; i > 0; i--) {
+        char texto[20];
+        snprintf(texto, sizeof(texto), "%d", i);
+        uint8_t ssd[ssd1306_buffer_length];
+        memset(ssd, 0, ssd1306_buffer_length);
+        ssd1306_draw_string_scaled(ssd, 20, 20, "AMARELO", 2);
+        ssd1306_draw_string_scaled(ssd, 50, 40, texto, 2);
+        render_on_display(ssd, &frame_area);
         printf("Sinal amarelo(%d)\n", 3 - i);
         sleep_ms(1000);
     }
