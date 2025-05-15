@@ -32,7 +32,8 @@ typedef enum {
     TRAVESSIA_AMARELO,
     TRAVESSIA_VERMELHO,
     TRAVESSIA_BUZZER,
-    TRAVESSIA_FINAL
+    TRAVESSIA_FINAL,
+    ESPERANDO_TRAVESSIA  
 } EstadoSemaforo;
 
 EstadoSemaforo estado = SEMAFORO_VERMELHO;
@@ -48,8 +49,6 @@ bool callback_timer_semaforo(struct repeating_timer *t);
 
 // Função para desenhar texto escalado no display OLED (simplificada)
 void ssd1306_draw_string_scaled(uint8_t *buffer, int x, int y, const char *text, int scale) {
-    // Usa a função nativa para desenhar (ajustar conforme a biblioteca que você tem)
-    // Esta é uma placeholder para ilustrar, ajuste se necessário.
     while (*text) {
         ssd1306_draw_char(buffer, x, y, *text);
         x += 6 * scale;
@@ -59,10 +58,8 @@ void ssd1306_draw_string_scaled(uint8_t *buffer, int x, int y, const char *text,
 
 int main() {
     stdio_init_all();
-
     inicializar_hardware();
 
-    // Inicializa I2C e display OLED
     i2c_init(i2c1, 400000);
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -77,10 +74,7 @@ int main() {
     frame_area.end_page = ssd1306_n_pages - 1;
     calculate_render_area_buffer_length(&frame_area);
 
-    // Timer para checar botão pedestre a cada 100ms
     add_repeating_timer_ms(100, callback_timer_botao, NULL, &timer_botao);
-
-    // Inicia ciclo padrão do semáforo
     iniciar_ciclo_semaforo();
 
     printf("Semaforo iniciado...\n");
@@ -92,13 +86,11 @@ int main() {
 }
 
 void inicializar_hardware() {
-    // Configura LEDs
     gpio_init(LED_VERMELHO);
     gpio_set_dir(LED_VERMELHO, GPIO_OUT);
     gpio_init(LED_VERDE);
     gpio_set_dir(LED_VERDE, GPIO_OUT);
 
-    // Configura botões pedestre com pull-up
     gpio_init(BOTAO_PEDESTRE_A);
     gpio_set_dir(BOTAO_PEDESTRE_A, GPIO_IN);
     gpio_pull_up(BOTAO_PEDESTRE_A);
@@ -107,19 +99,16 @@ void inicializar_hardware() {
     gpio_set_dir(BOTAO_PEDESTRE_B, GPIO_IN);
     gpio_pull_up(BOTAO_PEDESTRE_B);
 
-    // Configura buzzer
     gpio_init(BUZZER);
     gpio_set_dir(BUZZER, GPIO_OUT);
     gpio_put(BUZZER, 0);
 
-    // Desliga LEDs inicialmente
     gpio_put(LED_VERMELHO, 0);
     gpio_put(LED_VERDE, 0);
 }
 
 void atualizar_display(const char *texto, int seg) {
     char contador_str[10];
-    // Não mostra 0 no display
     if (seg == 0) {
         snprintf(contador_str, sizeof(contador_str), " ");
     } else {
@@ -153,13 +142,21 @@ void iniciar_modo_travessia() {
     estado = TRAVESSIA_AMARELO;
     contador = 3;
 
-    // Ambos LEDs ligados para amarelo (exemplo)
     gpio_put(LED_VERMELHO, 1);
     gpio_put(LED_VERDE, 1);
 
     atualizar_display("AMARELO", contador);
 
     add_repeating_timer_ms(-1000, callback_timer_semaforo, NULL, &timer_semaforo);
+}
+
+void botao_pedestre() {
+    uint8_t ssd[ssd1306_buffer_length];
+    memset(ssd, 0, ssd1306_buffer_length);
+    ssd1306_draw_string_scaled(ssd, 15, 10, "BOTAO", 2);
+    ssd1306_draw_string_scaled(ssd, 15, 30, "PEDESTRES", 2);
+    ssd1306_draw_string_scaled(ssd, 15, 45, "ACIONADO", 2);
+    render_on_display(ssd, &frame_area);
 }
 
 bool callback_timer_botao(struct repeating_timer *t) {
@@ -172,7 +169,12 @@ bool callback_timer_botao(struct repeating_timer *t) {
     if (pressionado) {
         if (!aguardando_soltar) {
             if (absolute_time_diff_us(ultimo_acionamento, get_absolute_time()) / 1000 > DEBOUNCE_MS) {
-                pedestre_acionou = true;
+                if (estado != ESPERANDO_TRAVESSIA && estado < TRAVESSIA_AMARELO) {
+                    estado = ESPERANDO_TRAVESSIA;
+                    contador = 2;
+                    cancel_repeating_timer(&timer_semaforo);
+                    add_repeating_timer_ms(-1000, callback_timer_semaforo, NULL, &timer_semaforo);
+                }
                 aguardando_soltar = true;
                 ultimo_acionamento = get_absolute_time();
             }
@@ -185,10 +187,13 @@ bool callback_timer_botao(struct repeating_timer *t) {
 }
 
 bool callback_timer_semaforo(struct repeating_timer *t) {
-    if (pedestre_acionou && (estado == SEMAFORO_VERMELHO || estado == SEMAFORO_VERDE || estado == SEMAFORO_AMARELO)) {
-        printf("Botao pedestre acionado, iniciando travessia\n");
-        pedestre_acionou = false;
-        iniciar_modo_travessia();
+    if (estado == ESPERANDO_TRAVESSIA) {
+        botao_pedestre();
+        if (contador == 0) {
+            iniciar_modo_travessia();
+        } else {
+            contador--;
+        }
         return true;
     }
 
@@ -201,7 +206,6 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 gpio_put(LED_VERDE, 1);
             } else {
                 atualizar_display("VERMELHO", contador);
-                printf("Sinal vermelho: %d\n", contador);
                 contador--;
             }
             break;
@@ -214,7 +218,6 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 gpio_put(LED_VERDE, 1);
             } else {
                 atualizar_display("VERDE", contador);
-                printf("Sinal verde: %d\n", contador);
                 contador--;
             }
             break;
@@ -227,7 +230,6 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 gpio_put(LED_VERDE, 0);
             } else {
                 atualizar_display("AMARELO", contador);
-                printf("Sinal amarelo: %d\n", contador);
                 contador--;
             }
             break;
@@ -240,7 +242,6 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 gpio_put(LED_VERDE, 0);
             } else {
                 atualizar_display("AMARELO", contador);
-                printf("Travessia amarelo: %d\n", contador);
                 contador--;
             }
             break;
@@ -250,15 +251,16 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 estado = TRAVESSIA_BUZZER;
                 contador = 5;
             } else {
-                atualizar_display("VERMELHO", contador);
-                printf("Travessia vermelho: %d\n", contador);
+                uint8_t ssd[ssd1306_buffer_length];
+                memset(ssd, 0, ssd1306_buffer_length);
+                ssd1306_draw_string_scaled(ssd, 15, 30, "VERMELHO", 2);
+                render_on_display(ssd, &frame_area);
                 contador--;
             }
             break;
 
         case TRAVESSIA_BUZZER:
             {
-                printf("Faltam: %d segundos\n", contador);
                 char texto[20];
                 snprintf(texto, sizeof(texto), "FALTAM %d s", contador);
 
@@ -267,16 +269,12 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 ssd1306_draw_string_scaled(ssd, 20, 25, texto, 2);
                 render_on_display(ssd, &frame_area);
 
-                // Pisca buzzer a cada segundo (contagem ímpar liga, par desliga)
-                if (contador % 2 == 1)
-                    gpio_put(BUZZER, 1);
-                else
-                    gpio_put(BUZZER, 0);
+                gpio_put(BUZZER, contador % 2);
 
                 if (contador == 0) {
                     gpio_put(BUZZER, 0);
                     estado = TRAVESSIA_FINAL;
-                    contador = 5;
+                    contador = 2;
                 } else {
                     contador--;
                 }
@@ -290,8 +288,6 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
                 ssd1306_draw_string_scaled(ssd, 15, 20, "TRAVESSIA", 2);
                 ssd1306_draw_string_scaled(ssd, 15, 40, "ENCERRADA", 2);
                 render_on_display(ssd, &frame_area);
-
-                printf("Travessia encerrada\n");
 
                 if (contador == 0) {
                     iniciar_ciclo_semaforo();
