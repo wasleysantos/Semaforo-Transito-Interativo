@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
@@ -33,6 +34,7 @@ typedef enum {
     TRAVESSIA_VERMELHO,
     TRAVESSIA_BUZZER,
     TRAVESSIA_FINAL,
+    POS_TRAVESSIA_VERDE,
     ESPERANDO_TRAVESSIA  
 } EstadoSemaforo;
 
@@ -79,7 +81,6 @@ int main() {
 
     printf("Semaforo iniciado...\n");
 
-    // Loop principal vazio para manter o programa rodando
     while (true) {
         tight_loop_contents();
     }
@@ -259,41 +260,51 @@ bool callback_timer_semaforo(struct repeating_timer *t) {
             }
             break;
 
-        case TRAVESSIA_BUZZER:
-            {
-                char texto[20];
-                snprintf(texto, sizeof(texto), "FALTAM %d s", contador);
+        case TRAVESSIA_BUZZER: {
+            char texto[20];
+            snprintf(texto, sizeof(texto), "FALTAM %d s", contador);
 
-                uint8_t ssd[ssd1306_buffer_length];
-                memset(ssd, 0, ssd1306_buffer_length);
-                ssd1306_draw_string_scaled(ssd, 20, 25, texto, 2);
-                render_on_display(ssd, &frame_area);
+            uint8_t ssd[ssd1306_buffer_length];
+            memset(ssd, 0, ssd1306_buffer_length);
+            ssd1306_draw_string_scaled(ssd, 20, 25, texto, 2);
+            render_on_display(ssd, &frame_area);
 
-                gpio_put(BUZZER, contador % 2);
+            gpio_put(BUZZER, contador % 2);
 
-                if (contador == 0) {
-                    gpio_put(BUZZER, 0);
-                    estado = TRAVESSIA_FINAL;
-                    contador = 2;
-                } else {
-                    contador--;
-                }
+            if (contador == 0) {
+                gpio_put(BUZZER, 0);
+                estado = TRAVESSIA_FINAL;
+                contador = 2;
+            } else {
+                contador--;
             }
             break;
+        }
 
-        case TRAVESSIA_FINAL:
-            {
-                uint8_t ssd[ssd1306_buffer_length];
-                memset(ssd, 0, ssd1306_buffer_length);
-                ssd1306_draw_string_scaled(ssd, 15, 20, "TRAVESSIA", 2);
-                ssd1306_draw_string_scaled(ssd, 15, 40, "ENCERRADA", 2);
-                render_on_display(ssd, &frame_area);
+        case TRAVESSIA_FINAL: {
+            uint8_t ssd[ssd1306_buffer_length];
+            memset(ssd, 0, ssd1306_buffer_length);
+            ssd1306_draw_string_scaled(ssd, 15, 20, "TRAVESSIA", 2);
+            ssd1306_draw_string_scaled(ssd, 15, 40, "ENCERRADA", 2);
+            render_on_display(ssd, &frame_area);
 
-                if (contador == 0) {
-                    iniciar_ciclo_semaforo();
-                } else {
-                    contador--;
-                }
+            if (contador == 0) {
+                estado = POS_TRAVESSIA_VERDE;
+                contador = 10;
+                gpio_put(LED_VERMELHO, 0);
+                gpio_put(LED_VERDE, 1);
+            } else {
+                contador--;
+            }
+            break;
+        }
+
+        case POS_TRAVESSIA_VERDE:
+            if (contador == 0) {
+                iniciar_ciclo_semaforo();
+            } else {
+                atualizar_display("VERDE", contador);
+                contador--;
             }
             break;
     }
